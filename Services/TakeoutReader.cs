@@ -39,9 +39,9 @@ namespace YouTubeSubManager.Services
             var list = new List<ChannelInfo>();
             while (csv.Read())
             {
-                var id = Get("Channel ID") ?? Get("ChannelId") ?? Get("ChannelID");
-                var title = Get("Title") ?? Get("Channel Title") ?? Get("Name");
-                var url = Get("Channel URL") ?? Get("Url") ?? Get("Channel Url");
+                var id = Get("Channel ID") ?? Get("ChannelId") ?? Get("ChannelID") ?? Get("頻道 ID");
+                var title = Get("Title") ?? Get("Channel Title") ?? Get("Name") ?? Get("頻道名稱");
+                var url = Get("Channel URL") ?? Get("Url") ?? Get("Channel Url") ?? Get("頻道網址");
 
                 if (string.IsNullOrWhiteSpace(id) && !string.IsNullOrWhiteSpace(url))
                     id = TryExtractChannelIdFromUrl(url!);

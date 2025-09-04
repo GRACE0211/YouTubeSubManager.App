@@ -30,6 +30,7 @@ partial class MainForm
     {
         components = new System.ComponentModel.Container();
         statusMain = new StatusStrip();
+        lblCounts = new ToolStripStatusLabel();
         flowLayoutPanel1 = new FlowLayoutPanel();
         btnImport = new Button();
         btnAddCat = new Button();
@@ -45,7 +46,6 @@ partial class MainForm
         txtSearch = new TextBox();
         lstAll = new ListBox();
         tvCategories = new TreeView();
-        lblCounts = new ToolStripStatusLabel();
         menuCategory = new ContextMenuStrip(components);
         miRename = new ToolStripMenuItem();
         miDelete = new ToolStripMenuItem();
@@ -61,6 +61,7 @@ partial class MainForm
         // 
         // statusMain
         // 
+        statusMain.BackColor = SystemColors.ActiveCaption;
         statusMain.Items.AddRange(new ToolStripItem[] { lblCounts });
         statusMain.Location = new Point(0, 653);
         statusMain.Name = "statusMain";
@@ -68,8 +69,16 @@ partial class MainForm
         statusMain.TabIndex = 0;
         statusMain.Text = "statusStrip1";
         // 
+        // lblCounts
+        // 
+        lblCounts.Name = "lblCounts";
+        lblCounts.Size = new Size(137, 17);
+        lblCounts.Text = "總頻道數/已分類/未分類";
+        // 
         // flowLayoutPanel1
         // 
+        flowLayoutPanel1.BackColor = Color.LightSteelBlue;
+        flowLayoutPanel1.BorderStyle = BorderStyle.FixedSingle;
         flowLayoutPanel1.Controls.Add(btnImport);
         flowLayoutPanel1.Controls.Add(btnAddCat);
         flowLayoutPanel1.Controls.Add(btnDelCat);
@@ -80,9 +89,9 @@ partial class MainForm
         flowLayoutPanel1.Controls.Add(btnExportSql);
         flowLayoutPanel1.Controls.Add(btnExportDb);
         flowLayoutPanel1.Dock = DockStyle.Bottom;
-        flowLayoutPanel1.Location = new Point(0, 610);
+        flowLayoutPanel1.Location = new Point(0, 613);
         flowLayoutPanel1.Name = "flowLayoutPanel1";
-        flowLayoutPanel1.Size = new Size(1184, 43);
+        flowLayoutPanel1.Size = new Size(1184, 40);
         flowLayoutPanel1.TabIndex = 1;
         // 
         // btnImport
@@ -186,6 +195,7 @@ partial class MainForm
         // 
         // splitMain
         // 
+        splitMain.BackColor = Color.LightSteelBlue;
         splitMain.Dock = DockStyle.Fill;
         splitMain.FixedPanel = FixedPanel.Panel1;
         splitMain.Location = new Point(0, 0);
@@ -198,7 +208,7 @@ partial class MainForm
         // splitMain.Panel2
         // 
         splitMain.Panel2.Controls.Add(tvCategories);
-        splitMain.Size = new Size(1184, 610);
+        splitMain.Size = new Size(1184, 613);
         splitMain.SplitterDistance = 394;
         splitMain.TabIndex = 3;
         // 
@@ -214,7 +224,7 @@ partial class MainForm
         tableLayoutPanel1.RowCount = 2;
         tableLayoutPanel1.RowStyles.Add(new RowStyle());
         tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        tableLayoutPanel1.Size = new Size(394, 610);
+        tableLayoutPanel1.Size = new Size(394, 613);
         tableLayoutPanel1.TabIndex = 0;
         // 
         // txtSearch
@@ -229,13 +239,15 @@ partial class MainForm
         // 
         // lstAll
         // 
+        lstAll.BorderStyle = BorderStyle.FixedSingle;
         lstAll.Dock = DockStyle.Fill;
+        lstAll.Font = new Font("微軟正黑體", 11.25F, FontStyle.Bold, GraphicsUnit.Point, 136);
         lstAll.FormattingEnabled = true;
-        lstAll.ItemHeight = 15;
+        lstAll.ItemHeight = 19;
         lstAll.Location = new Point(3, 32);
         lstAll.Name = "lstAll";
         lstAll.SelectionMode = SelectionMode.MultiExtended;
-        lstAll.Size = new Size(388, 575);
+        lstAll.Size = new Size(388, 578);
         lstAll.TabIndex = 1;
         lstAll.DoubleClick += lstAll_DoubleClick;
         lstAll.MouseDown += lstAll_MouseDown;
@@ -243,24 +255,22 @@ partial class MainForm
         // tvCategories
         // 
         tvCategories.AllowDrop = true;
+        tvCategories.BackColor = Color.AliceBlue;
+        tvCategories.BorderStyle = BorderStyle.None;
         tvCategories.Dock = DockStyle.Fill;
+        tvCategories.Font = new Font("微軟正黑體", 12F, FontStyle.Bold, GraphicsUnit.Point, 136);
         tvCategories.HideSelection = false;
         tvCategories.LabelEdit = true;
         tvCategories.Location = new Point(0, 0);
+        tvCategories.Margin = new Padding(5);
         tvCategories.Name = "tvCategories";
-        tvCategories.Size = new Size(786, 610);
+        tvCategories.Size = new Size(786, 613);
         tvCategories.TabIndex = 0;
         tvCategories.NodeMouseClick += tvCategories_NodeMouseClick;
         tvCategories.NodeMouseDoubleClick += tvCategories_NodeMouseDoubleClick;
         tvCategories.DragDrop += tvCategories_DragDrop;
         tvCategories.DragEnter += tvCategories_DragEnterOrOver;
         tvCategories.DragOver += tvCategories_DragEnterOrOver;
-        // 
-        // lblCounts
-        // 
-        lblCounts.Name = "lblCounts";
-        lblCounts.Size = new Size(137, 17);
-        lblCounts.Text = "總頻道數/已分類/未分類";
         // 
         // menuCategory
         // 

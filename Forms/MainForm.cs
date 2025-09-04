@@ -9,6 +9,7 @@ using System.Text;
 using System.Windows.Forms;
 using YouTubeSubManager.Models;
 using YouTubeSubManager.Services;
+using System.Windows.Forms.VisualStyles;
 
 namespace YouTubeSubManager
 {
@@ -25,6 +26,14 @@ namespace YouTubeSubManager
             InitializeComponent();
             // 如果沒有用設計器綁 Load 事件，可以在這裡手動：
             this.Load += MainForm_Load;
+
+
+            // 建立 ImageList，先放三個基本圖示
+            var imgs = new ImageList { ColorDepth = ColorDepth.Depth32Bit, ImageSize = new Size(16, 16) };
+            imgs.Images.Add("folder", Resources.folder);
+            imgs.Images.Add("folder_open", Resources.folder_open);
+            imgs.Images.Add("channel", Resources.channel);
+            tvCategories.ImageList = imgs;
         }
 
         // ================= 初始綁定 =================
@@ -41,6 +50,115 @@ namespace YouTubeSubManager
             tvCategories.AllowDrop = true;
 
             UpdateCounts();
+
+            lstAll.DrawMode = DrawMode.OwnerDrawFixed;
+            lstAll.ItemHeight = 28;            // 行高
+            lstAll.BorderStyle = BorderStyle.FixedSingle; // 外框（可換成 None）
+
+            lstAll.DrawItem += (s, e) =>
+            {
+                e.DrawBackground();
+
+                // 交錯色（可選）
+                if ((e.Index % 2) == 0 && (e.State & DrawItemState.Selected) == 0)
+                    e.Graphics.FillRectangle(Brushes.WhiteSmoke, e.Bounds);
+
+                // 文字
+                if (e.Index >= 0)
+                {
+                    var text = (lstAll.Items[e.Index] as YouTubeSubManager.Models.ChannelInfo)?.Title ?? lstAll.Items[e.Index]?.ToString() ?? "";
+                    TextRenderer.DrawText(e.Graphics, text, e.Font,
+                        new Rectangle(e.Bounds.X + 8, e.Bounds.Y + 6, e.Bounds.Width - 16, e.Bounds.Height - 6),
+                        ((e.State & DrawItemState.Selected) != 0) ? SystemColors.HighlightText : e.ForeColor,
+                        TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
+                }
+
+                // 每列底線
+                using var pen = new Pen(Color.Gainsboro);
+                e.Graphics.DrawLine(pen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
+
+                e.DrawFocusRectangle();
+            };
+
+            tvCategories.DrawMode = TreeViewDrawMode.OwnerDrawText;
+            tvCategories.ShowPlusMinus = true;          // 要顯示展開/收合箭頭
+            tvCategories.ItemHeight = 22;               // 看需要調整行高
+
+
+            tvCategories.DrawNode += (s, e) =>
+            {
+                var g = e.Graphics;
+                bool selected = (e.State & TreeNodeStates.Selected) != 0;
+
+                int rowY = e.Bounds.Y;
+                int rowH = e.Bounds.Height;
+                int rowW = tvCategories.ClientSize.Width;
+
+                // 1) 整列 zebra 底色（含左邊空白與箭頭區）
+                var rowColor = selected
+                    ? SystemColors.Highlight
+                    : ((e.Node.Level + e.Node.Index) % 2 == 0 ? Color.WhiteSmoke : Color.White);
+                using (var b = new SolidBrush(rowColor))
+                    g.FillRectangle(b, new Rectangle(0, rowY, rowW, rowH));
+
+                // 2) 畫展開/收合箭頭（避免被背景覆蓋）—使用 ControlPaint
+                // 只有有子節點才畫按鈕，沒有子節點就不畫
+                if (e.Node.Nodes.Count > 0 && tvCategories.ShowPlusMinus)
+                {
+                    // 估算 glyph 位置與大小
+                    int glyph = 10; // 9~11 都可，看你的 ItemHeight 調
+                    int gx = e.Bounds.Left - glyph - 8; // 在文字左邊一點
+                    int gy = e.Bounds.Top + (e.Bounds.Height - glyph) / 2;
+
+                    // 畫 [+] 或 [–] 的按鈕樣式
+                    var bs = e.Node.IsExpanded ? ButtonState.Pushed : ButtonState.Normal;
+                    ControlPaint.DrawExpandButton(g, new Rectangle(gx, gy, glyph, glyph), bs);
+                }
+
+                // 3) 畫節點圖示（在文字左側）
+                if (tvCategories.ImageList is ImageList il)
+                {
+                    var key = (selected && !string.IsNullOrEmpty(e.Node.SelectedImageKey))
+                                ? e.Node.SelectedImageKey
+                                : e.Node.ImageKey;
+
+                    if (!string.IsNullOrEmpty(key) && il.Images.ContainsKey(key))
+                    {
+                        var img = il.Images[key];
+                        var sz = il.ImageSize;
+                        int ix = e.Bounds.Left - sz.Width - 3;
+                        int iy = rowY + (rowH - sz.Height) / 2;
+                        g.DrawImage(img, new Rectangle(ix, iy, sz.Width, sz.Height));
+                    }
+                }
+
+                // 4) 畫文字（透明背景）
+                var fore = selected ? SystemColors.HighlightText : e.Node.ForeColor;
+                using var textBrush = new SolidBrush(fore);
+                var textRect = new Rectangle(e.Bounds.X, rowY, e.Bounds.Width, rowH);
+                g.DrawString(e.Node.Text, tvCategories.Font, textBrush, textRect,
+                             new StringFormat { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter });
+
+                // 5) 每列底線（可要可不要）
+                using var pen = new Pen(Color.Gainsboro);
+                g.DrawLine(pen, 0, rowY + rowH - 1, rowW, rowY + rowH - 1);
+
+                // 重點：不要再讓系統畫預設（避免把文字底色刷回來）
+                // e.DrawDefault = false;
+            };
+
+
+            tvCategories.HideSelection = false;
+        }
+        private void ApplyZebraColors()
+        {
+            int i = 0;
+            foreach (TreeNode n in tvCategories.Nodes) Walk(n, ref i);
+            void Walk(TreeNode node, ref int idx)
+            {
+                node.BackColor = (idx++ % 2 == 0) ? Color.FromArgb(246, 246, 246) : Color.White;
+                foreach (TreeNode c in node.Nodes) Walk(c, ref idx);
+            }
         }
 
         // ================= 搜尋 =================
@@ -95,6 +213,7 @@ namespace YouTubeSubManager
             var dragged = lstAll.SelectedItems.Cast<ChannelInfo>().ToList();
             if (dragged.Count > 0)
                 lstAll.DoDragDrop(dragged, DragDropEffects.Move);
+            //ApplyZebraColors();
         }
 
         private void tvCategories_DragEnterOrOver(object sender, DragEventArgs e)
@@ -106,6 +225,7 @@ namespace YouTubeSubManager
             var node = tvCategories.GetNodeAt(pt);
             if (IsCategoryNode(node))
                 e.Effect = DragDropEffects.Move;
+            //ApplyZebraColors();
         }
 
         private void tvCategories_DragDrop(object sender, DragEventArgs e)
@@ -126,9 +246,11 @@ namespace YouTubeSubManager
                 {
                     if (_assignedIds.Add(ch.ChannelId))
                     {
+                        // 新增頻道子節點時
                         cat.Channels.Add(ch);
                         var child = node.Nodes.Add(ch.Title);
                         child.Tag = ch;
+                        child.ImageKey = child.SelectedImageKey = "channel";
 
                         var idx = _unassigned.FindIndex(x => x.ChannelId.Equals(ch.ChannelId, StringComparison.OrdinalIgnoreCase));
                         if (idx >= 0) _unassigned.RemoveAt(idx);
@@ -142,19 +264,25 @@ namespace YouTubeSubManager
 
             ApplyFilter();
             UpdateCounts();
+            ApplyZebraColors();
         }
 
         private static bool IsCategoryNode(TreeNode? n) => n?.Tag is Category;
+        private readonly ImageList _imgs = new() { ColorDepth = ColorDepth.Depth32Bit, ImageSize = new Size(16, 16) };
 
         // ================= 分類：新增/刪除/重新命名 =================
         private void btnAddCat_Click(object sender, EventArgs e)
         {
             var name = NextCategoryName();
             var cat = new Category { Name = name };
-            var n = new TreeNode(name) { Tag = cat };
+            //var n = new TreeNode(name) { Tag = cat };
+            var n = new TreeNode(name) { Tag = cat, ImageKey = "folder", SelectedImageKey = "folder_open" };
             tvCategories.Nodes.Add(n);
             tvCategories.SelectedNode = n;
             n.Expand();
+
+            ApplyZebraColors();
+
         }
 
         private string NextCategoryName()
@@ -259,6 +387,7 @@ namespace YouTubeSubManager
 
         private void btnLoadJson_Click(object sender, EventArgs e)
         {
+            ApplyZebraColors();
             using var ofd = new OpenFileDialog { Title = "載入 categories.json", Filter = "JSON|*.json" };
             if (ofd.ShowDialog() != DialogResult.OK) return;
 
@@ -295,6 +424,8 @@ namespace YouTubeSubManager
             {
                 MessageBox.Show($"載入失敗：{ex.Message}", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+
+
         }
 
         private CategoryBook BuildCategoryBookFromTree()
@@ -539,6 +670,7 @@ START TRANSACTION;
 
         private void btnLoadCatDb_Click(object sender, EventArgs e)
         {
+            ApplyZebraColors();
             var path = PromptPickDb(forSave: false);
             if (string.IsNullOrEmpty(path)) return;
 
