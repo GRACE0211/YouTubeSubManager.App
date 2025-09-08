@@ -20,6 +20,7 @@ namespace YouTubeSubManager
         private readonly List<ChannelInfo> _unassigned = new();  // 左側未分類清單
         private readonly BindingSource _binding = new();
         private readonly HashSet<string> _assignedIds = new(StringComparer.OrdinalIgnoreCase);
+        private TreeNode? _dragHighlightNode = null; // 拖放時的高亮節點
 
         public MainForm()
         {
@@ -45,13 +46,13 @@ namespace YouTubeSubManager
             lstAll.DataSource = _binding;
 
             // TreeView 建議屬性（你在設計器已設定過就不用）
-            tvCategories.HideSelection = false;
-            tvCategories.LabelEdit = true;
-            tvCategories.AllowDrop = true;
+            //tvCategories.HideSelection = false;
+            //tvCategories.LabelEdit = true;
+            //tvCategories.AllowDrop = true;
 
             UpdateCounts();
 
-            lstAll.DrawMode = DrawMode.OwnerDrawFixed;
+            lstAll.DrawMode = DrawMode.OwnerDrawFixed; // 自訂繪製
             lstAll.ItemHeight = 28;            // 行高
             lstAll.BorderStyle = BorderStyle.FixedSingle; // 外框（可換成 None）
 
@@ -80,75 +81,53 @@ namespace YouTubeSubManager
                 e.DrawFocusRectangle();
             };
 
-            tvCategories.DrawMode = TreeViewDrawMode.OwnerDrawText;
-            tvCategories.ShowPlusMinus = true;          // 要顯示展開/收合箭頭
-            tvCategories.ItemHeight = 22;               // 看需要調整行高
 
+            tvCategories.DrawMode = TreeViewDrawMode.OwnerDrawText;
 
             tvCategories.DrawNode += (s, e) =>
             {
                 var g = e.Graphics;
                 bool selected = (e.State & TreeNodeStates.Selected) != 0;
 
-                int rowY = e.Bounds.Y;
-                int rowH = e.Bounds.Height;
-                int rowW = tvCategories.ClientSize.Width;
+                // 背景
+                var bg = selected ? SystemColors.Highlight
+                      : ((e.Node.Index % 2 == 0) ? Color.FromArgb(216, 228, 249) : Color.White);
+                using (var b = new SolidBrush(bg))
+                    g.FillRectangle(b, new Rectangle(e.Bounds.X, e.Bounds.Y,  // ← 這裡原本是 0
+                                                     tvCategories.Width - e.Bounds.X,
+                                                     e.Bounds.Height));
 
-                // 1) 整列 zebra 底色（含左邊空白與箭頭區）
-                var rowColor = selected
-                    ? SystemColors.Highlight
-                    : ((e.Node.Level + e.Node.Index) % 2 == 0 ? Color.WhiteSmoke : Color.White);
-                using (var b = new SolidBrush(rowColor))
-                    g.FillRectangle(b, new Rectangle(0, rowY, rowW, rowH));
-
-                // 2) 畫展開/收合箭頭（避免被背景覆蓋）—使用 ControlPaint
-                // 只有有子節點才畫按鈕，沒有子節點就不畫
-                if (e.Node.Nodes.Count > 0 && tvCategories.ShowPlusMinus)
+                // 圖示（你原本的 A/B 任一法都可）
+                if (tvCategories.ImageList != null)
                 {
-                    // 估算 glyph 位置與大小
-                    int glyph = 10; // 9~11 都可，看你的 ItemHeight 調
-                    int gx = e.Bounds.Left - glyph - 8; // 在文字左邊一點
-                    int gy = e.Bounds.Top + (e.Bounds.Height - glyph) / 2;
-
-                    // 畫 [+] 或 [–] 的按鈕樣式
-                    var bs = e.Node.IsExpanded ? ButtonState.Pushed : ButtonState.Normal;
-                    ControlPaint.DrawExpandButton(g, new Rectangle(gx, gy, glyph, glyph), bs);
-                }
-
-                // 3) 畫節點圖示（在文字左側）
-                if (tvCategories.ImageList is ImageList il)
-                {
-                    var key = (selected && !string.IsNullOrEmpty(e.Node.SelectedImageKey))
+                    var key = selected && !string.IsNullOrEmpty(e.Node.SelectedImageKey)
                                 ? e.Node.SelectedImageKey
                                 : e.Node.ImageKey;
-
-                    if (!string.IsNullOrEmpty(key) && il.Images.ContainsKey(key))
+                    if (!string.IsNullOrEmpty(key) && tvCategories.ImageList.Images.ContainsKey(key))
                     {
-                        var img = il.Images[key];
-                        var sz = il.ImageSize;
-                        int ix = e.Bounds.Left - sz.Width - 3;
-                        int iy = rowY + (rowH - sz.Height) / 2;
-                        g.DrawImage(img, new Rectangle(ix, iy, sz.Width, sz.Height));
+                        var img = tvCategories.ImageList.Images[key];
+                        var sz = tvCategories.ImageList.ImageSize;
+                        int x = e.Bounds.Left - sz.Width - 3;              // 放在文字左邊
+                        int y = e.Bounds.Top + (e.Bounds.Height - sz.Height) / 2;
+                        g.DrawImage(img, new Rectangle(x, y, sz.Width, sz.Height));
                     }
                 }
 
-                // 4) 畫文字（透明背景）
+                // 文字
                 var fore = selected ? SystemColors.HighlightText : e.Node.ForeColor;
-                using var textBrush = new SolidBrush(fore);
-                var textRect = new Rectangle(e.Bounds.X, rowY, e.Bounds.Width, rowH);
-                g.DrawString(e.Node.Text, tvCategories.Font, textBrush, textRect,
-                             new StringFormat { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter });
+                TextRenderer.DrawText(g, e.Node.Text, tvCategories.Font,
+                    new Rectangle(e.Bounds.X, e.Bounds.Y, tvCategories.Width - e.Bounds.X, e.Bounds.Height),
+                    fore, TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
 
-                // 5) 每列底線（可要可不要）
-                using var pen = new Pen(Color.Gainsboro);
-                g.DrawLine(pen, 0, rowY + rowH - 1, rowW, rowY + rowH - 1);
-
-                // 重點：不要再讓系統畫預設（避免把文字底色刷回來）
-                // e.DrawDefault = false;
+                // 讓系統照常畫箭頭/線等預設項目
+                e.DrawDefault = true;
+                tvCategories.ShowPlusMinus = true;
             };
 
 
             tvCategories.HideSelection = false;
+
+
         }
         private void ApplyZebraColors()
         {
@@ -223,6 +202,13 @@ namespace YouTubeSubManager
 
             var pt = tvCategories.PointToClient(new Point(e.X, e.Y));
             var node = tvCategories.GetNodeAt(pt);
+
+            if(_dragHighlightNode != node)
+            {
+                _dragHighlightNode = node;
+                tvCategories.Invalidate();
+            }
+
             if (IsCategoryNode(node))
                 e.Effect = DragDropEffects.Move;
             //ApplyZebraColors();
@@ -265,6 +251,14 @@ namespace YouTubeSubManager
             ApplyFilter();
             UpdateCounts();
             ApplyZebraColors();
+            _dragHighlightNode = node;
+            tvCategories.Invalidate();
+        }
+
+        private void tvCategories_DragLeave(object sender, EventArgs e)
+        {
+                _dragHighlightNode = null;
+                tvCategories.Invalidate();
         }
 
         private static bool IsCategoryNode(TreeNode? n) => n?.Tag is Category;
