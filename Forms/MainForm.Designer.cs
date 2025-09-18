@@ -49,6 +49,8 @@ partial class MainForm
         menuCategory = new ContextMenuStrip(components);
         miRename = new ToolStripMenuItem();
         miDelete = new ToolStripMenuItem();
+        pnlLoading = new Panel();
+        picLoading = new PictureBox();
         statusMain.SuspendLayout();
         flowLayoutPanel1.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)splitMain).BeginInit();
@@ -57,6 +59,8 @@ partial class MainForm
         splitMain.SuspendLayout();
         tableLayoutPanel1.SuspendLayout();
         menuCategory.SuspendLayout();
+        pnlLoading.SuspendLayout();
+        ((System.ComponentModel.ISupportInitialize)picLoading).BeginInit();
         SuspendLayout();
         // 
         // statusMain
@@ -292,11 +296,34 @@ partial class MainForm
         miDelete.Text = "刪除分類";
         miDelete.Click += miDelete_Click;
         // 
+        // pnlLoading
+        // 
+        pnlLoading.BackColor = Color.Black;
+        pnlLoading.Controls.Add(picLoading);
+        pnlLoading.Dock = DockStyle.Fill;
+        pnlLoading.Location = new Point(0, 0);
+        pnlLoading.Name = "pnlLoading";
+        pnlLoading.Size = new Size(1184, 613);
+        pnlLoading.TabIndex = 4;
+        pnlLoading.Visible = false;
+        // 
+        // picLoading
+        // 
+        picLoading.BackColor = Color.Transparent;
+        picLoading.Image = Resources.loadingGIF;
+        picLoading.Location = new Point(412, 191);
+        picLoading.Name = "picLoading";
+        picLoading.Size = new Size(306, 187);
+        picLoading.SizeMode = PictureBoxSizeMode.Zoom;
+        picLoading.TabIndex = 0;
+        picLoading.TabStop = false;
+        // 
         // MainForm
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
         ClientSize = new Size(1184, 675);
+        Controls.Add(pnlLoading);
         Controls.Add(splitMain);
         Controls.Add(flowLayoutPanel1);
         Controls.Add(statusMain);
@@ -313,6 +340,8 @@ partial class MainForm
         tableLayoutPanel1.ResumeLayout(false);
         tableLayoutPanel1.PerformLayout();
         menuCategory.ResumeLayout(false);
+        pnlLoading.ResumeLayout(false);
+        ((System.ComponentModel.ISupportInitialize)picLoading).EndInit();
         ResumeLayout(false);
         PerformLayout();
     }
@@ -339,4 +368,6 @@ partial class MainForm
     private ContextMenuStrip menuCategory;
     private ToolStripMenuItem miRename;
     private ToolStripMenuItem miDelete;
+    private Panel pnlLoading;
+    private PictureBox picLoading;
 }

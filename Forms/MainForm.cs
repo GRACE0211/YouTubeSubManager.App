@@ -22,6 +22,7 @@ namespace YouTubeSubManager
         private readonly HashSet<string> _assignedIds = new(StringComparer.OrdinalIgnoreCase);
         private TreeNode? _dragHighlightNode = null; // 拖放時的高亮節點
 
+
         public MainForm()
         {
             InitializeComponent();
@@ -44,6 +45,8 @@ namespace YouTubeSubManager
             _binding.DataSource = _unassigned;
             lstAll.DisplayMember = nameof(ChannelInfo.Title);
             lstAll.DataSource = _binding;
+
+            ImageAnimator.Animate(picLoading.Image,OnFrameChanged);
 
             // TreeView 建議屬性（你在設計器已設定過就不用）
             //tvCategories.HideSelection = false;
@@ -155,8 +158,23 @@ namespace YouTubeSubManager
         }
 
         // ================= 匯入 CSV/JSON =================
+
+        private void OnFrameChanged(object? sender, EventArgs e)
+        {
+            picLoading.Invalidate(); // 讓 PictureBox 重新繪製
+        }
+
+        private void picLoading_Paint(object sender, PaintEventArgs e)
+        {
+            if (picLoading.Image != null)
+            {
+                ImageAnimator.UpdateFrames(picLoading.Image);
+                e.Graphics.DrawImage(picLoading.Image, new Rectangle(0, 0, picLoading.Width, picLoading.Height));
+            }
+        }
         private async void btnImport_Click(object sender, EventArgs e)
         {
+            
             using var ofd = new OpenFileDialog
             {
                 Title = "選擇 Google Takeout 訂閱檔 (CSV/JSON)",
@@ -166,11 +184,15 @@ namespace YouTubeSubManager
 
             try
             {
-                var list = await System.Threading.Tasks.Task.Run(() => TakeoutReader.Read(ofd.FileName));
+                // 按匯入檔案才出現 'Loading...'
+                pnlLoading.Visible = true;
+                pnlLoading.BringToFront();
+                pnlLoading.Refresh();
+
+                var list = await Task.Run(() => TakeoutReader.Read(ofd.FileName));
                 _allImported.Clear();
                 _allImported.AddRange(list);
 
-                // 重置 UI 狀態
                 _assignedIds.Clear();
                 _unassigned.Clear();
                 _unassigned.AddRange(_allImported);
@@ -181,7 +203,12 @@ namespace YouTubeSubManager
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"匯入失敗：{ex.Message}", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"匯入失敗：{ex.Message}", "錯誤",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                pnlLoading.Visible = false; // 匯入結束 → 隱藏
             }
         }
 
