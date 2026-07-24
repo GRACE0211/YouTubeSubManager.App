@@ -29,6 +29,7 @@ partial class MainForm
     private void InitializeComponent()
     {
         components = new System.ComponentModel.Container();
+        System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
         statusMain = new StatusStrip();
         lblCounts = new ToolStripStatusLabel();
         flowLayoutPanel1 = new FlowLayoutPanel();
@@ -310,7 +311,7 @@ partial class MainForm
         // picLoading
         // 
         picLoading.BackColor = Color.Transparent;
-        picLoading.Image = Resources.loadingGIF;
+        picLoading.Image = (Image)resources.GetObject("picLoading.Image");
         picLoading.Location = new Point(412, 191);
         picLoading.Name = "picLoading";
         picLoading.Size = new Size(306, 187);

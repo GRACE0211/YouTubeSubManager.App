@@ -361,3 +361,22 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# 1. 常見環境變數與金鑰檔
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# 2. .NET / Visual Studio 開發環境敏感設定檔
+appsettings.Development.json
+appsettings.Secrets.json
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json.example
+
+# 3. 常見 API 金鑰與服務帳號檔案
+credentials.json
+service-account-key.json
+secrets.json

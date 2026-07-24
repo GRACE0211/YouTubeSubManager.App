@@ -159,7 +159,7 @@ namespace YouTubeSubManager
 
         // ================= 匯入 CSV/JSON =================
 
-        private void OnFrameChanged(object? sender, EventArgs e)
+        private void OnFrameChanged(object? sender, EventArgs e) 
         {
             picLoading.Invalidate(); // 讓 PictureBox 重新繪製
         }
